@@ -23,6 +23,7 @@
 	var/list/decals
 	var/requires_activation	//add to air processing after initialize?
 	var/changing_turf = FALSE
+	var/altitude = 0 //Metres above sea level
 
 /turf/vv_edit_var(var_name, new_value)
 	var/static/list/banned_edits = list("x", "y", "z")
@@ -209,8 +210,19 @@
 	if(L)
 		qdel(L)
 
+/turf/proc/altitudeCheck() //Averages the new turf's altitude so we don't get random valleys or cliffs when something is deleted
+	var/total
+	var/i
+	for(var/turf/T in orange(1, src))
+		if(T == src)
+			continue
+		total += T.altitude
+		i++
+	altitude = round(total / i)
+
 //wrapper for ChangeTurf()s that you want to prevent/affect without overriding ChangeTurf() itself
 /turf/proc/TerraformTurf(path, new_baseturf, defer_change = FALSE, ignore_air = FALSE, forceop = FALSE)
+
 	return ChangeTurf(path, new_baseturf, defer_change, ignore_air, forceop)
 
 //Creates a new turf
@@ -266,12 +278,12 @@
 
 		for(var/turf/open/space/S in RANGE_TURFS(1, src)) //RANGE_TURFS is in code\__HELPERS\game.dm
 			S.update_starlight()
-
 	return W
 
 /turf/proc/AfterChange(ignore_air = FALSE) //called after a turf has been replaced in ChangeTurf()
 	levelupdate()
 	CalculateAdjacentTurfs()
+	altitudeCheck()
 
 	//update firedoor adjacency
 	var/list/turfs_to_check = get_adjacent_open_turfs(src) | src
